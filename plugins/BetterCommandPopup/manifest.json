@@ -1,0 +1,20 @@
+{
+	"format": 1,
+	"id": "dev.loki.vtx.bettercommandpopup",
+	"name": "BetterCommandPopup",
+	"description": "i genuinly dont know what this plugin does.",
+	"author": "Loki-vtx <918437723755384832> ",
+	"icon": "PencilIcon",
+	"version": "1.0.1",
+	"dependencies": {
+		"revenge.api": {
+			"version": ">=1 <2"
+		},
+		"discord": {
+			"version": "*"
+		}
+	},
+	"dist": {
+		"script": "index.js"
+	}
+}
