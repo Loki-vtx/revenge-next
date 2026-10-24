@@ -47,20 +47,20 @@ const unpatchSheet = after(instance, 'default', (_: any, sheet: any) => { unpatc
         if (!rows) return;
         
         rows.unshift(
-          <><ActionSheetRow
-            label="Copy Command Mention"
-            onPress={() => {
-              const mention = `</${command.name}:${command.id}>`;
-              revenge.externals.ReactNativeClipboard.Clipboard.setString(mention);
-              showToast("Copied command mention to clipboard", CopyIcon);
-            }} /></>
-        
-          <><ActionSheetRow
-            label="Copy Command ID"
-            onPress={() => {
-              revenge.externals.ReactNativeClipboard.Clipboard.setString(command.id);
-              showToast("Copied command ID to clipboard", CopyIcon);
-            }} /></>
+	<><ActionSheetRow
+		label="Copy Command Mention"
+		onPress={() => {
+			const mention = `</${command.name}:${command.id}>`
+			revenge.externals.ReactNativeClipboard.Clipboard.setString(mention)
+			showToast('Copied command mention to clipboard')
+		}} /></>,
+	<><ActionSheetRow
+		label="Copy Command ID"
+		onPress={() => {
+			revenge.externals.ReactNativeClipboard.Clipboard.setString(command.id)
+			showToast('Copied command ID to clipboard')
+		}} /></>,
+)
         );
       });
     });
