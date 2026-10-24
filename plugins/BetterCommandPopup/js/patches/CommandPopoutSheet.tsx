@@ -32,7 +32,7 @@ function patchOpenLazy(ActionSheet: any): () => void {
 
 		comp?.then?.((instance: any) => {
 			const unpatchSheet = after(instance, 'default', (_: any, sheet: any) => {
-				unpatchSheet() 
+				unpatchSheet()
 
 				const container = findInReactTree(
 					sheet,
@@ -90,7 +90,7 @@ function patchOpenLazy(ActionSheet: any): () => void {
 export default function patchCommandPopoutSheet(): () => void {
 	let unpatch: (() => void) | undefined
 	let stopWaiting: (() => void) | undefined
-
+    
 	const existing = lookupModule(SHEET_FILTER)[0]
 	if (existing) {
 		unpatch = patchOpenLazy(existing)
