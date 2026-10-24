@@ -54,7 +54,7 @@ const unpatchSheet = after(instance, 'default', (_: any, sheet: any) => { unpatc
               revenge.externals.ReactNativeClipboard.Clipboard.setString(mention);
               showToast("Copied command mention to clipboard", CopyIcon);
             }} /></>
-          ,
+        
           <><ActionSheetRow
             label="Copy Command ID"
             onPress={() => {
