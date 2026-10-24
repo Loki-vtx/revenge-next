@@ -1,13 +1,11 @@
 import { ToastActionCreators } from '@revenge-mod/discord/actions';
-import { lookupModule } from '@revenge-mod/modules/finders';
+import { lookupModule, waitForModules } from '@revenge-mod/modules/finders';
 import { withProps } from '@revenge-mod/modules/finders/filters';
 import { after, before } from '@revenge-mod/patcher';
 import { findInTree } from '@revenge-mod/utils/tree';
 const { React } = revenge.react
 
-const ActionSheet = lookupModule(withProps('openLazy', 'hideActionSheet'))[0]
-const ActionSheetRow = lookupModule(withProps('ActionSheetRow'))[0]?.ActionSheetRow
-const CopyIcon = revenge.assets.getAssetIdByName('CopyIcon')
+const SHEET_FILTER = withProps('openLazy', 'hideActionSheet')
 
 const findInReactTree = (node: any, filter: (n: any) => boolean) =>
 	findInTree(node, filter as any, { walkable: new Set(['props', 'children']) })
@@ -15,18 +13,20 @@ const findInReactTree = (node: any, filter: (n: any) => boolean) =>
 function showToast(text: string) {
 	ToastActionCreators.open(`command-copy-${Date.now()}`, {
 		text,
-		icon: CopyIcon,
+		icon: revenge.assets.getAssetIdByName('CopyIcon'),
 	} as any)
 }
 
-export default function patchCommandPopoutSheet() {
+function patchOpenLazy(ActionSheet: any): () => void {
 	return before(ActionSheet, 'openLazy', (args: any[]) => {
 		const [comp, tag] = args
 		if (!tag?.startsWith?.('ExecutedCommandPopout')) return args
 
+		const ActionSheetRow = lookupModule(withProps('ActionSheetRow'))[0]?.ActionSheetRow
+
 		comp.then((instance: any) => {
 			const unpatchSheet = after(instance, 'default', (_: any, sheet: any) => {
-				unpatchSheet() // only needed for this opening
+				unpatchSheet() 
 
 				const container = findInReactTree(
 					sheet,
@@ -35,7 +35,7 @@ export default function patchCommandPopoutSheet() {
 				if (!container) return sheet
 
 				const unpatchContainer = after(container, 'type', (info: any, containerComp: any) => {
-					unpatchContainer() // only needed for this opening
+					unpatchContainer() 
 
 					const command = info?.[0]?.data
 					if (!command) return containerComp
@@ -70,4 +70,24 @@ export default function patchCommandPopoutSheet() {
 
 		return args
 	})
+}
+
+export default function patchCommandPopoutSheet(): () => void {
+	let unpatch: (() => void) | undefined
+	let stopWaiting: (() => void) | undefined
+
+
+	const existing = lookupModule(SHEET_FILTER)[0]
+	if (existing) {
+		unpatch = patchOpenLazy(existing)
+	} else {
+		stopWaiting = waitForModules(SHEET_FILTER, (exports: any) => {
+			unpatch = patchOpenLazy(exports)
+		})
+	}
+
+	return () => {
+		stopWaiting?.()
+		unpatch?.()
+	}
 }
