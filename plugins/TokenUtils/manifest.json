@@ -2,10 +2,10 @@
 	"format": 1,
 	"id": "dev.loki.vtx.token-grabber",
 	"name": "TokenUtils",
-	"description": "Copy your account token from your profile and switch accounts with a token.(made by ai because i need it asap)",
+	"description": "Copy  Your Own token by typing : /token_get",
 	"author": "Loki-vtx",
 	"icon": "KeyIcon",
-	"version": "1.0.2",
+	"version": "1.1.2",
 	"dependencies": {
 		"revenge.api": {
 			"version": ">=1 <2"
