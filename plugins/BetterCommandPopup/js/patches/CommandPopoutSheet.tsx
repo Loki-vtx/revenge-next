@@ -6,6 +6,7 @@ import { findInTree } from '@revenge-mod/utils/tree';
 const { React } = revenge.react
 
 const SHEET_FILTER = withProps('openLazy', 'hideActionSheet')
+const LOG = '[command-copy]'
 
 const findInReactTree = (node: any, filter: (n: any) => boolean) =>
 	findInTree(node, filter as any, { walkable: new Set(['props', 'children']) })
@@ -24,7 +25,12 @@ function patchOpenLazy(ActionSheet: any): () => void {
 
 		const ActionSheetRow = lookupModule(withProps('ActionSheetRow'))[0]?.ActionSheetRow
 
-		comp.then((instance: any) => {
+		if (!ActionSheetRow) {
+			console.log(LOG, 'ActionSheetRow not found, skipping')
+			return args
+		}
+
+		comp?.then?.((instance: any) => {
 			const unpatchSheet = after(instance, 'default', (_: any, sheet: any) => {
 				unpatchSheet() 
 
@@ -37,30 +43,39 @@ function patchOpenLazy(ActionSheet: any): () => void {
 				const unpatchContainer = after(container, 'type', (info: any, containerComp: any) => {
 					unpatchContainer() 
 
-					const command = info?.[0]?.data
-					if (!command) return containerComp
+					try {
+						const command = info?.[0]?.data
+						if (!command) return containerComp
 
-					const rows = findInReactTree(
-						containerComp,
-						t => t?.[0]?.props?.children?.type?.name === 'TableRow',
-					)
-					if (!rows) return containerComp
+						const rows = findInReactTree(
+							containerComp,
+							t => t?.[0]?.props?.children?.type?.name === 'TableRow',
+						)
+						if (!rows) return containerComp
 
-					rows.unshift(
-						<><ActionSheetRow
-							label="Copy Command Mention"
-							onPress={() => {
-								const mention = `</${command.name}:${command.id}>`
-								revenge.externals.ReactNativeClipboard.Clipboard.setString(mention)
-								showToast('Copied command mention to clipboard')
-							}} /></>,
-						<><ActionSheetRow
-							label="Copy Command ID"
-							onPress={() => {
-								revenge.externals.ReactNativeClipboard.Clipboard.setString(command.id)
-								showToast('Copied command ID to clipboard')
-							}} /></>,
-					)
+						rows.unshift(
+							<ActionSheetRow
+								key="command-copy-mention"
+								label="Copy Command Mention"
+								onPress={() => {
+									const mention = `</${command.name}:${command.id}>`
+									revenge.externals.ReactNativeClipboard.Clipboard.setString(mention)
+									showToast('Copied command mention to clipboard')
+								}}
+							/>,
+							<ActionSheetRow
+								key="command-copy-id"
+								label="Copy Command ID"
+								onPress={() => {
+									revenge.externals.ReactNativeClipboard.Clipboard.setString(command.id)
+									showToast('Copied command ID to clipboard')
+								}}
+							/>,
+						)
+					} catch (error) {
+						console.log(LOG, 'could not add rows:', error)
+					}
+
 					return containerComp
 				})
 
@@ -75,7 +90,6 @@ function patchOpenLazy(ActionSheet: any): () => void {
 export default function patchCommandPopoutSheet(): () => void {
 	let unpatch: (() => void) | undefined
 	let stopWaiting: (() => void) | undefined
-
 
 	const existing = lookupModule(SHEET_FILTER)[0]
 	if (existing) {
