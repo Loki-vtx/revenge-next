@@ -5,7 +5,7 @@
 	"description": "i genuinly dont know what this plugin does.",
 	"author": "Loki-vtx <918437723755384832> ",
 	"icon": "PencilIcon",
-	"version": "1.0.1",
+	"version": "0.0.1",
 	"dependencies": {
 		"revenge.api": {
 			"version": ">=1 <2"
