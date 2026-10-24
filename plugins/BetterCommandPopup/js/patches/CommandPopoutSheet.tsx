@@ -2,7 +2,7 @@ import { ToastActionCreators } from '@revenge-mod/discord/actions';
 import { lookupModule } from '@revenge-mod/modules/finders';
 import { withProps } from '@revenge-mod/modules/finders/filters';
 import { after, before } from '@revenge-mod/patcher';
-import { findInReactTree } from '@revenge-mod/utils/tree';
+import { findInTree } from '@revenge-mod/utils/tree';
 const { React } = revenge.react
 
 const ActionSheet = lookupModule(withProps('openLazy', 'hideActionSheet'))[0]
@@ -19,50 +19,55 @@ function showToast(text: string) {
 	} as any)
 }
 
-function copy(text: string, message: string) {
-	revenge.externals.ReactNativeClipboard.Clipboard.setString(text)
-	showToast(message)
+export default function patchCommandPopoutSheet() {
+	return before(ActionSheet, 'openLazy', (args: any[]) => {
+		const [comp, tag] = args
+		if (!tag?.startsWith?.('ExecutedCommandPopout')) return args
+
+		comp.then((instance: any) => {
+			const unpatchSheet = after(instance, 'default', (_: any, sheet: any) => {
+				unpatchSheet() // only needed for this opening
+
+				const container = findInReactTree(
+					sheet,
+					c => c?.type?.name === 'CommandActionsContainer',
+				)
+				if (!container) return sheet
+
+				const unpatchContainer = after(container, 'type', (info: any, containerComp: any) => {
+					unpatchContainer() // only needed for this opening
+
+					const command = info?.[0]?.data
+					if (!command) return containerComp
+
+					const rows = findInReactTree(
+						containerComp,
+						t => t?.[0]?.props?.children?.type?.name === 'TableRow',
+					)
+					if (!rows) return containerComp
+
+					rows.unshift(
+						<><ActionSheetRow
+							label="Copy Command Mention"
+							onPress={() => {
+								const mention = `</${command.name}:${command.id}>`
+								revenge.externals.ReactNativeClipboard.Clipboard.setString(mention)
+								showToast('Copied command mention to clipboard')
+							}} /></>,
+						<><ActionSheetRow
+							label="Copy Command ID"
+							onPress={() => {
+								revenge.externals.ReactNativeClipboard.Clipboard.setString(command.id)
+								showToast('Copied command ID to clipboard')
+							}} /></>,
+					)
+					return containerComp
+				})
+
+				return sheet
+			})
+		})
+
+		return args
+	})
 }
-
-export default plugin({
-  start({ cleanup }) {
-    cleanup(
-     before(ActionSheet, 'openLazy', (args: any[]) => {
-      const [comp, tag] = args
-if (!tag?.startsWith?.('ExecutedCommandPopout')) return args
-
-  comp.then((instance: any) => {
-const unpatchSheet = after(instance, 'default', (_: any, sheet: any) => { unpatchSheet()
-      
-      const container = findInTree(sheet, c => c?.type?.name === "CommandActionsContainer");
-      if (!container) return;
-      
-      const unpatchContainer = after("type", container, (info: any, containerComp) => {
-     unpatchContainer()
-        
-        const command = info?.[0]?.data;
-        if (!command) return;
-        
-        const rows = findInReactTree(containerComp, t => t?.[0]?.props?.children?.type?.name === "TableRow");
-        if (!rows) return;
-        
-        rows.unshift(
-	<><ActionSheetRow
-		label="Copy Command Mention"
-		onPress={() => {
-			const mention = `</${command.name}:${command.id}>`
-			revenge.externals.ReactNativeClipboard.Clipboard.setString(mention)
-			showToast('Copied command mention to clipboard')
-		}} /></>,
-	<><ActionSheetRow
-		label="Copy Command ID"
-		onPress={() => {
-			revenge.externals.ReactNativeClipboard.Clipboard.setString(command.id)
-			showToast('Copied command ID to clipboard')
-		}} /></>,
-)
-        );
-      });
-    });
-  });
-}),
